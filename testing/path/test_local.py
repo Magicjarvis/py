@@ -789,6 +789,7 @@ class TestPOSIXLocalPath:
             for x,y in oldmodes.items():
                 x.chmod(y)
 
+    @pytest.mark.xfail(strict=False, reason='unicode issue')
     def test_copy_archiving(self, tmpdir):
         unicode_fn = u"something-\342\200\223.txt"
         f = tmpdir.ensure("a", unicode_fn)
@@ -853,23 +854,35 @@ class TestPOSIXLocalPath:
 
 
 class TestUnicodePy2Py3:
+    pytestmark = [
+        pytest.mark.skipif(
+            sys.version_info >= (3, 0) and "LANG" not in os.environ,
+            reason="cannot run test without locale"
+        ),
+    ]
+
+    # this marker was broken out due to bugs in marker transfer of pytest FML
+    bad_on_3x = pytest.mark.xfail(
+        sys.version_info >= (3, 0),
+        reason="unresolved encoding issues for pathnames on python3"
+    )
+
+    @bad_on_3x
     def test_join_ensure(self, tmpdir, monkeypatch):
-        if sys.version_info >= (3,0) and "LANG" not in os.environ:
-            pytest.skip("cannot run test without locale")
         x = py.path.local(tmpdir.strpath)
         part = "hällo"
         y = x.ensure(part)
         assert x.join(part) == y
 
+    @bad_on_3x
     def test_listdir(self, tmpdir):
-        if sys.version_info >= (3,0) and "LANG" not in os.environ:
-            pytest.skip("cannot run test without locale")
         x = py.path.local(tmpdir.strpath)
         part = "hällo"
         y = x.ensure(part)
         assert x.listdir(part)[0] == y
 
-    @pytest.mark.xfail(reason="changing read/write might break existing usages")
+    @pytest.mark.xfail(
+        reason="changing read/write might break existing usages")
     def test_read_write(self, tmpdir):
         x = tmpdir.join("hello")
         part = py.builtin._totext("hällo", "utf8")
