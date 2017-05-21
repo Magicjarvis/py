@@ -421,6 +421,9 @@ class ExceptionInfo(object):
         loc = ReprFileLocation(entry.path, entry.lineno + 1, self.exconly())
         return loc.__unicode__()
 
+    def __len__(self):
+        return len(self.__unicode__())
+
 
 class FormattedExcinfo(object):
     """ presenting information about failing Functions and Generators. """
